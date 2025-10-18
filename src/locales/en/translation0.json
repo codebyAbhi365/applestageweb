@@ -1,0 +1,77 @@
+{
+  "stageTitle": "Stage 0: Healthy Apple",
+  "overviewTitle": "What’s happening",
+  "overviewDesc": "Your apple tree is healthy and strong! The fruits are shiny, smooth, and free from any dark spots or rough patches. Leaves are bright green, showing that your tree is getting good sunlight and nutrients.",
+  "preventionTitle": "Cause to avoid",
+  "preventionDesc": "Apple scab spreads mostly during the rainy season through fungus that grows in wet conditions or infected leaves from the ground.",
+  "actionTitle": "What to do",
+  "actionSteps": [
+    "Keep your orchard clean — remove fallen leaves and old fruits.",
+    "Prune your tree for better airflow.",
+    "Spray Neem oil (5 ml per liter of water) once every 15 days as a natural protector.",
+    "Maintain proper distance between trees to reduce moisture buildup."
+  ],
+  "readAloud": "Read Aloud",
+  "reading": "Reading..." ,
+
+   "stage1_title": "Stage 1: Early Infection",
+  "stage1_overviewTitle": "What’s happening:",
+  "stage1_overviewDesc": "Tiny olive-green or light-brown spots start appearing on the apple’s surface and leaves. The fruit still looks normal, but infection has just started.",
+  "stage1_preventionTitle": "Cause:",
+  "stage1_preventionDesc": "Fungus spores may have spread from infected leaves or fruits after rain or dew.",
+  "stage1_actionTitle": "What to do (Organic Remedies):",
+  "stage1_actionSteps": [
+    "Mix 1 liter cow milk + 9 liters water and spray on leaves and fruits — milk helps stop fungal growth.",
+    "Apply sulfur-based organic fungicide if available.",
+    "Keep checking fruits daily to stop it early."
+  ],
+  "stage2_title": "Stage 2: Mild Infection",
+  "stage2_overviewTitle": "What’s happening:",
+  "stage2_overviewDesc": "The spots become darker and rough, spreading across more parts of the apple. Leaves may start curling or show yellow patches.",
+  "stage2_preventionTitle": "Cause:",
+  "stage2_preventionDesc": "Fungal spores are increasing because of moisture and less air circulation.",
+  "stage2_actionTitle": "What to do (Organic Remedies):",
+  "stage2_actionSteps": [
+    "Spray neem oil + baking soda solution (5 ml neem oil + 1 tsp baking soda per liter of water).",
+    "Avoid watering the leaves directly.",
+    "Collect and destroy infected fruits or leaves away from the farm.",
+    "Add compost or Trichoderma fungus to soil — it kills harmful fungus naturally."
+  ],
+  "stage3_title": "Stage 3: Moderate Infection",
+  "stage3_overviewTitle": "What’s happening:",
+  "stage3_overviewDesc": "The scab covers larger portions of the apple. Fruits may start cracking or deforming. Growth slows, and leaves fall early.",
+  "stage3_preventionTitle": "Cause:",
+  "stage3_preventionDesc": "The fungus is now spreading fast through wind and water drops.",
+  "stage3_actionTitle": "What to do (Organic Remedies):",
+  "stage3_actionSteps": [
+    "Spray liquid compost tea or buttermilk spray (1 part buttermilk + 5 parts water).",
+    "Add cow dung manure near roots to strengthen the plant.",
+    "Remove and burn all heavily infected fruits to prevent spread."
+  ],
+  "stage4_title": "Stage 4: Heavy Infection",
+  "stage4_overviewTitle": "What’s happening:",
+  "stage4_overviewDesc": "Fruits have large, dark brown or black rough patches. The apple surface looks hard and cracked. Many leaves have fallen, and fruits stop growing.",
+  "stage4_preventionTitle": "Cause:",
+  "stage4_preventionDesc": "Continuous infection and poor weather management. Fungus has entered deeper layers of fruit skin.",
+  "stage4_actionTitle": "What to do (Organic Remedies):",
+  "stage4_actionSteps": [
+    "Spray 1% Bordeaux mixture (a natural combination of copper sulfate and lime).",
+    "Avoid synthetic fertilizers — use compost or vermicompost.",
+    "Keep trees open to sunlight and air by pruning extra branches.",
+    "Do soil treatment with Trichoderma harzianum fungus to stop disease from soil level."
+  ],
+  "stage5_title": "Stage 5: Severe / Post-Harvest Stage",
+  "stage5_overviewTitle": "What’s happening:",
+  "stage5_overviewDesc": "Apples are fully infected — they turn brown or black, and texture becomes rough. These fruits are no longer marketable but can still help the next crop if handled properly.",
+  "stage5_preventionTitle": "Cause:",
+  "stage5_preventionDesc": "Neglected infection, unclean farm floor, or continuous fungal buildup.",
+  "stage5_actionTitle": "What to do (Recovery Plan):",
+  "stage5_actionSteps": [
+    "Remove all infected fruits and leaves.",
+    "Clean orchard floor completely.",
+    "Deep plough after harvest to expose fungus to sunlight.",
+    "Before next flowering, spray lime sulfur or neem oil for early protection.",
+    "Always start preventive care from Stage 0 next season."
+  ]
+
+}
