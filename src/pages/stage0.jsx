@@ -10,6 +10,7 @@ import {
   ListChecks,
   Volume2,
   StopCircle,
+  Mic,
 } from "lucide-react";
 
 // 3D Model Component
@@ -21,17 +22,18 @@ function AppleModel({ path }) {
 export default function Stage0() {
   const { t, i18n } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [voices, setVoices] = useState({ en: null, hi: null, mr: null });
   const [audio, setAudio] = useState(null);
+  const [recognition, setRecognition] = useState(null);
 
+  // 🎤 Load voices and setup recognition
   useEffect(() => {
     const loadAndSetVoices = () => {
       setTimeout(() => {
         const availableVoices = window.speechSynthesis.getVoices();
         if (availableVoices.length === 0) return;
-        const englishVoice = availableVoices.find((v) =>
-          v.lang.startsWith("en")
-        );
+        const englishVoice = availableVoices.find((v) => v.lang.startsWith("en"));
         const hindiVoice = availableVoices.find((v) => v.lang === "hi-IN");
         const marathiVoice = availableVoices.find((v) => v.lang === "mr-IN");
         setVoices({ en: englishVoice, hi: hindiVoice, mr: marathiVoice });
@@ -42,33 +44,37 @@ export default function Stage0() {
     window.speechSynthesis.onvoiceschanged = loadAndSetVoices;
     loadAndSetVoices();
 
+    // 🎙️ Setup speech recognition
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recog = new SpeechRecognition();
+      recog.continuous = false;
+      recog.interimResults = false;
+      recog.lang = "en-IN";
+
+      recog.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log("User said:", transcript);
+        handleVoiceCommand(transcript);
+      };
+
+      recog.onend = () => setIsListening(false);
+      setRecognition(recog);
+    } else {
+      console.warn("Speech recognition not supported in this browser.");
+    }
+
     return () => {
-      window.speechSynthesis.onvoiceschanged = null;
       window.speechSynthesis.cancel();
       if (audio) audio.pause();
     };
   }, [audio]);
 
-  const handleSpeak = () => {
+  // 🔊 Speak helper
+  const speak = (text) => {
     const synth = window.speechSynthesis;
-
-    if (synth.speaking) {
-      synth.cancel();
-      if (audio) {
-        audio.pause();
-        setAudio(null);
-      }
-      setIsSpeaking(false);
-      return;
-    }
-
-    if (isSpeaking) return;
-
-    const textToSpeak = `${t("overviewTitle")}. ${t("overviewDesc")}. ${t(
-      "preventionTitle"
-    )}. ${t("preventionDesc")}. ${t("actionTitle")}. ${t("actionSteps", {
-      returnObjects: true,
-    }).join(". ")}`;
+    if (synth.speaking) synth.cancel();
 
     const currentLang = i18n.language;
     let selectedVoice =
@@ -78,18 +84,11 @@ export default function Stage0() {
         ? voices.hi
         : voices.mr;
 
-    // If Hindi or Marathi voice not supported, use Google Translate TTS fallback
-    if (
-      (currentLang === "hi" || currentLang === "mr") &&
-      !selectedVoice
-    ) {
-      console.warn(
-        `${currentLang.toUpperCase()} voice not supported — using fallback TTS`
-      );
-
+    // Fallback to Google Translate TTS if regional voice not available
+    if ((currentLang === "hi" || currentLang === "mr") && !selectedVoice) {
       const langCode = currentLang === "hi" ? "hi-IN" : "mr-IN";
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
-        textToSpeak
+        text
       )}&tl=${langCode}&client=tw-ob`;
 
       const newAudio = new Audio(ttsUrl);
@@ -101,26 +100,62 @@ export default function Stage0() {
         setIsSpeaking(false);
         setAudio(null);
       };
-      newAudio.onerror = (e) => {
-        console.error("TTS audio playback error:", e);
-        setIsSpeaking(false);
-      };
       return;
     }
 
-    // Normal speech synthesis for supported languages
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = currentLang;
     if (selectedVoice) utterance.voice = selectedVoice;
-
-    setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (e) => {
-      console.error("Speech synthesis error:", e);
-      setIsSpeaking(false);
-    };
+    setIsSpeaking(true);
+    synth.speak(utterance);
+  };
 
-    setTimeout(() => synth.speak(utterance), 100);
+  // 🧠 Handle speech commands
+  const handleVoiceCommand = (command) => {
+    if (command.includes("overview")) {
+      speak(`${t("overviewTitle")}. ${t("overviewDesc")}`);
+    } else if (command.includes("prevention")) {
+      speak(`${t("preventionTitle")}. ${t("preventionDesc")}`);
+    } else if (command.includes("action")) {
+      speak(
+        `${t("actionTitle")}. ${t("actionSteps", { returnObjects: true }).join(". ")}`
+      );
+    } else if (command.includes("stop")) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      speak("Stopped reading.");
+    } else if (command.includes("read all")) {
+      handleSpeak();
+    } else {
+      speak("Sorry, I didn't understand that command.");
+    }
+  };
+
+  // 🔁 Read full content
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const textToSpeak = `${t("overviewTitle")}. ${t("overviewDesc")}. ${t(
+      "preventionTitle"
+    )}. ${t("preventionDesc")}. ${t("actionTitle")}. ${t("actionSteps", {
+      returnObjects: true,
+    }).join(". ")}`;
+
+    speak(textToSpeak);
+  };
+
+  // 🎤 Start listening to voice
+  const startListening = () => {
+    if (recognition && !isListening) {
+      setIsListening(true);
+      recognition.start();
+      speak("Listening for your command.");
+    }
   };
 
   const modelPath = "/models/apples0.glb";
@@ -166,14 +201,27 @@ export default function Stage0() {
               </button>
             ))}
           </div>
-          <button
-            onClick={handleSpeak}
-            className="flex items-center gap-2.5 px-5 py-2 text-sm font-semibold text-white bg-[#E06B80] rounded-full hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50"
-            disabled={isSpeaking}
-          >
-            {isSpeaking ? <StopCircle size={18} /> : <Volume2 size={18} />}{" "}
-            {isSpeaking ? t("reading") : t("readAloud")}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={startListening}
+              className={`flex items-center gap-2.5 px-5 py-2 text-sm font-semibold rounded-full text-white shadow-lg transition-all ${
+                isListening ? "bg-green-600" : "bg-blue-600 hover:opacity-90"
+              }`}
+              disabled={isListening}
+            >
+              <Mic size={18} /> {isListening ? "Listening..." : "Voice Command"}
+            </button>
+
+            <button
+              onClick={handleSpeak}
+              className="flex items-center gap-2.5 px-5 py-2 text-sm font-semibold text-white bg-[#E06B80] rounded-full hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50"
+              disabled={isSpeaking}
+            >
+              {isSpeaking ? <StopCircle size={18} /> : <Volume2 size={18} />}{" "}
+              {isSpeaking ? t("reading") : t("readAloud")}
+            </button>
+          </div>
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
