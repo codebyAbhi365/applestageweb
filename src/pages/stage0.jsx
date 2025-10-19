@@ -43,48 +43,50 @@ export default function Stage0() {
     };
   }, []);
 
-  // --- FULLY REVISED handleSpeak FUNCTION ---
+  // --- FULLY REVISED handleSpeak FUNCTION TO PREVENT 'INTERRUPTED' ERROR ---
   const handleSpeak = () => {
     const synth = window.speechSynthesis;
-    // If speaking, stop. If pending, cancel.
+    
+    // If an utterance is active, stop it. The 'onend' event will fire and reset the state.
     if (synth.speaking) {
       synth.cancel();
-      setIsSpeaking(false);
       return;
     }
-    if (isSpeaking) return; // Prevent multiple clicks while processing
+    // Prevent re-triggering if we're already in the process of starting
+    if (isSpeaking) return;
 
-    setIsSpeaking(true);
-
-    // 1. Removed stageTitle from the text to be spoken
     const textToSpeak = `${t('overviewTitle')}. ${t('overviewDesc')}. ${t('preventionTitle')}. ${t('preventionDesc')}. ${t('actionTitle')}. ${t('actionSteps', { returnObjects: true }).join('. ')}`;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     const currentLang = i18n.language;
 
-    // 2. This is the robust logic for mobile devices
     let selectedVoice = null;
     if (currentLang === 'en') selectedVoice = voices.en;
     else if (currentLang === 'hi') selectedVoice = voices.hi;
     else if (currentLang === 'mr') selectedVoice = voices.mr;
 
-    // ALWAYS set the language code. This is the most crucial part for mobile.
+    // This is the most crucial part for mobile.
     utterance.lang = currentLang;
-
-    // ONLY assign a specific voice if one was successfully found.
-    // Otherwise, the mobile OS will use its default voice for the specified language.
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
 
-    console.log("Attempting to speak with voice:", utterance.voice ? utterance.voice.name : `OS default for lang '${utterance.lang}'`);
-    
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (e) => {
-      console.error("Speech synthesis error:", e);
+    // Set the speaking state *before* we speak
+    setIsSpeaking(true);
+
+    utterance.onend = () => {
       setIsSpeaking(false);
     };
 
-    synth.speak(utterance);
+    utterance.onerror = (e) => {
+      console.error("Speech synthesis error:", e);
+      setIsSpeaking(false); // Also reset state on error
+    };
+
+    // THE FIX: Use a small timeout to give mobile browsers time to process
+    // the cancel command or language change, preventing the 'interrupted' error.
+    setTimeout(() => {
+      synth.speak(utterance);
+    }, 100);
   };
   
   const modelPath = "/models/apples0.glb";
