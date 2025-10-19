@@ -20,58 +20,71 @@ export default function Stage0() {
   // Voice-finding logic remains the same
   useEffect(() => {
     const loadAndSetVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length === 0) {
-        return;
-      }
-      const englishVoice = availableVoices.find(v => v.lang.startsWith('en-IN') || v.lang.startsWith('en-US'));
-      const hindiVoice = availableVoices.find(v => v.lang === 'hi-IN');
-      const marathiVoice = availableVoices.find(v => v.lang === 'mr-IN');
-      setVoices({ en: englishVoice, hi: hindiVoice, mr: marathiVoice });
-      console.log("Found voices:", { en: englishVoice, hi: hindiVoice, mr: marathiVoice });
+      // Use setTimeout to ensure voices are loaded, a common workaround for some browsers
+      setTimeout(() => {
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices.length === 0) {
+          return;
+        }
+        const englishVoice = availableVoices.find(v => v.lang.startsWith('en'));
+        const hindiVoice = availableVoices.find(v => v.lang === 'hi-IN');
+        const marathiVoice = availableVoices.find(v => v.lang === 'mr-IN');
+        setVoices({ en: englishVoice, hi: hindiVoice, mr: marathiVoice });
+        console.log("Found voices:", { en: englishVoice, hi: hindiVoice, mr: marathiVoice });
+      }, 100);
     };
+
     window.speechSynthesis.onvoiceschanged = loadAndSetVoices;
     loadAndSetVoices();
+
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
       window.speechSynthesis.cancel();
     };
   }, []);
 
-  // --- UPDATED handleSpeak function ---
+  // --- FULLY REVISED handleSpeak FUNCTION ---
   const handleSpeak = () => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
+    const synth = window.speechSynthesis;
+    // If speaking, stop. If pending, cancel.
+    if (synth.speaking) {
+      synth.cancel();
       setIsSpeaking(false);
       return;
     }
-    const textToSpeak = `${t('stageTitle')}. ${t('overviewTitle')}. ${t('overviewDesc')}. ${t('preventionTitle')}. ${t('preventionDesc')}. ${t('actionTitle')}. ${t('actionSteps', { returnObjects: true }).join('. ')}`;
+    if (isSpeaking) return; // Prevent multiple clicks while processing
+
+    setIsSpeaking(true);
+
+    // 1. Removed stageTitle from the text to be spoken
+    const textToSpeak = `${t('overviewTitle')}. ${t('overviewDesc')}. ${t('preventionTitle')}. ${t('preventionDesc')}. ${t('actionTitle')}. ${t('actionSteps', { returnObjects: true }).join('. ')}`;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     const currentLang = i18n.language;
 
-    // --- THE FIX ---
-    // 1. ALWAYS set the language on the utterance. This is the crucial step for mobile.
+    // 2. This is the robust logic for mobile devices
+    let selectedVoice = null;
+    if (currentLang === 'en') selectedVoice = voices.en;
+    else if (currentLang === 'hi') selectedVoice = voices.hi;
+    else if (currentLang === 'mr') selectedVoice = voices.mr;
+
+    // ALWAYS set the language code. This is the most crucial part for mobile.
     utterance.lang = currentLang;
 
-    // 2. Then, if a better voice was found, assign it.
-    if (currentLang === 'en' && voices.en) {
-      utterance.voice = voices.en;
-    } else if (currentLang === 'hi' && voices.hi) {
-      utterance.voice = voices.hi;
-    } else if (currentLang === 'mr' && voices.mr) {
-      utterance.voice = voices.mr;
+    // ONLY assign a specific voice if one was successfully found.
+    // Otherwise, the mobile OS will use its default voice for the specified language.
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
     }
 
-    // This log will help you debug on your mobile device
-    console.log("Attempting to speak with voice:", utterance.voice ? utterance.voice.name : "System default", "for language:", utterance.lang);
+    console.log("Attempting to speak with voice:", utterance.voice ? utterance.voice.name : `OS default for lang '${utterance.lang}'`);
     
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = (e) => {
-        console.error("Speech synthesis error:", e);
-        setIsSpeaking(false);
+      console.error("Speech synthesis error:", e);
+      setIsSpeaking(false);
     };
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
+
+    synth.speak(utterance);
   };
   
   const modelPath = "/models/apples0.glb";
@@ -97,7 +110,7 @@ export default function Stage0() {
           <div className="flex items-center gap-2">
             {['en', 'hi', 'mr'].map((lang) => (<button key={lang} onClick={() => i18n.changeLanguage(lang)} className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${i18n.language === lang ? 'bg-[#E06B80] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-rose-100'}`}>{lang.toUpperCase()}</button>))}
           </div>
-          <button onClick={handleSpeak} className="flex items-center gap-2.5 px-5 py-2 text-sm font-semibold text-white bg-[#E06B80] rounded-full hover:opacity-90 transition-opacity shadow-lg">
+          <button onClick={handleSpeak} className="flex items-center gap-2.5 px-5 py-2 text-sm font-semibold text-white bg-[#E06B80] rounded-full hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50" disabled={isSpeaking}>
             {isSpeaking ? <StopCircle size={18}/> : <Volume2 size={18} />} {isSpeaking ? t('reading') : t('readAloud')}
           </button>
         </section>
