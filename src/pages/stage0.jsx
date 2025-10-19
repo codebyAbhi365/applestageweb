@@ -17,36 +17,28 @@ export default function Stage0() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState({ en: null, hi: null, mr: null });
 
-  // --- UPDATED VOICE-FINDING LOGIC ---
+  // Voice-finding logic remains the same
   useEffect(() => {
     const loadAndSetVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       if (availableVoices.length === 0) {
-        // Voices might not be loaded yet, wait for the event.
         return;
       }
-
-      // Instead of looking for specific names, find the first available voice for the language code.
-      // This is far more reliable across different devices (desktop, Android, iOS).
       const englishVoice = availableVoices.find(v => v.lang.startsWith('en-IN') || v.lang.startsWith('en-US'));
       const hindiVoice = availableVoices.find(v => v.lang === 'hi-IN');
       const marathiVoice = availableVoices.find(v => v.lang === 'mr-IN');
-      
       setVoices({ en: englishVoice, hi: hindiVoice, mr: marathiVoice });
       console.log("Found voices:", { en: englishVoice, hi: hindiVoice, mr: marathiVoice });
     };
-
-    // This event fires when the browser has loaded the list of voices.
     window.speechSynthesis.onvoiceschanged = loadAndSetVoices;
-    // Also call it directly in case the voices are already loaded.
     loadAndSetVoices();
-
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
       window.speechSynthesis.cancel();
     };
   }, []);
 
+  // --- UPDATED handleSpeak function ---
   const handleSpeak = () => {
     if (isSpeaking) {
       window.speechSynthesis.cancel();
@@ -57,14 +49,21 @@ export default function Stage0() {
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     const currentLang = i18n.language;
 
-    // Use the found voice for the current language
-    if (currentLang === 'en' && voices.en) utterance.voice = voices.en;
-    else if (currentLang === 'hi' && voices.hi) utterance.voice = voices.hi;
-    else if (currentLang === 'mr' && voices.mr) utterance.voice = voices.mr;
-    else {
-      // Fallback if no specific voice was found for the language
-      utterance.lang = currentLang;
+    // --- THE FIX ---
+    // 1. ALWAYS set the language on the utterance. This is the crucial step for mobile.
+    utterance.lang = currentLang;
+
+    // 2. Then, if a better voice was found, assign it.
+    if (currentLang === 'en' && voices.en) {
+      utterance.voice = voices.en;
+    } else if (currentLang === 'hi' && voices.hi) {
+      utterance.voice = voices.hi;
+    } else if (currentLang === 'mr' && voices.mr) {
+      utterance.voice = voices.mr;
     }
+
+    // This log will help you debug on your mobile device
+    console.log("Attempting to speak with voice:", utterance.voice ? utterance.voice.name : "System default", "for language:", utterance.lang);
     
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = (e) => {
@@ -75,7 +74,6 @@ export default function Stage0() {
     setIsSpeaking(true);
   };
   
-  // No changes to the rest of the component
   const modelPath = "/models/apples0.glb";
 
   return (
